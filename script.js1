@@ -3,61 +3,66 @@ const taskInput = document.getElementById("taskInput");
 const addTaskBtn = document.getElementById("addTaskBtn");
 const taskList = document.getElementById("taskList");
 
-// Function to add a task
-function addTask() {
-    const taskText = taskInput.value.trim();
+// Function to load tasks from local storage
+function loadTasks() {
+    const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    savedTasks.forEach(taskText => {
+        createTaskElement(taskText);
+    });
+}
 
+// Function to create a task element (MODIFIED TO INCLUDE AI SUGGESTIONS)
+function createTaskElement(taskText, aiSuggestion = "") {
+    const li = document.createElement("li");
+    li.innerHTML = `
+        ${taskText} ${aiSuggestion ? `(Suggestion: ${aiSuggestion})` : ""}  
+        <button class="delete-btn">X</button>
+    `;
+
+    li.querySelector(".delete-btn").addEventListener("click", function () {
+        li.remove();
+        saveTasks();
+    });
+
+    taskList.appendChild(li);
+}
+
+// 🔹 AI Function for Task Suggestions (Replace with OpenAI API if needed)
+async function getAIPrediction(task) {
+    const suggestions = {
+        "study": "Revise notes for 30 minutes",
+        "exercise": "Do a 15-minute warm-up workout",
+        "meeting": "Prepare agenda before meeting",
+        "coding": "Practice coding challenges for 1 hour",
+        "reading": "Read 10 pages of a book",
+        "meditation": "Try a 5-minute guided meditation"
+    };
+
+    return suggestions[task.toLowerCase()] || "No suggestions available";
+}
+
+// Function to add a task (MODIFIED TO INCLUDE AI SUGGESTIONS)
+async function addTask() {
+    const taskText = taskInput.value.trim();
     if (taskText === "") {
         alert("Please enter a task!");
         return;
     }
 
-    // Create list item (li)
-    const li = document.createElement("li");
-    li.innerHTML = `
-        ${taskText} 
-        <button class="delete-btn">X</button>
-    `;
+    const aiSuggestion = await getAIPrediction(taskText);
+    createTaskElement(taskText, aiSuggestion);
 
-    // Add delete functionality
-    li.querySelector(".delete-btn").addEventListener("click", function () {
-        li.remove();
-        saveTasks(); // Update storage
-    });
-
-    // Add task to the list
-    taskList.appendChild(li);
     taskInput.value = "";
-
-    saveTasks(); // Save tasks after adding
+    saveTasks();
 }
 
-// Function to save tasks in local storage
+// Function to save tasks in local storage (EXCLUDES AI SUGGESTIONS)
 function saveTasks() {
     const tasks = [];
     document.querySelectorAll("#taskList li").forEach(task => {
-        tasks.push(task.textContent.replace("X", "").trim());
+        tasks.push(task.textContent.replace(/X|Suggestion: .*/g, "").trim());
     });
     localStorage.setItem("tasks", JSON.stringify(tasks));
-}
-
-// Function to load tasks from local storage
-function loadTasks() {
-    const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-    savedTasks.forEach(taskText => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-            ${taskText} 
-            <button class="delete-btn">X</button>
-        `;
-
-        li.querySelector(".delete-btn").addEventListener("click", function () {
-            li.remove();
-            saveTasks();
-        });
-
-        taskList.appendChild(li);
-    });
 }
 
 // Event listener for "Add Task" button
